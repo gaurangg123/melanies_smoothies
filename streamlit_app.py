@@ -1,7 +1,8 @@
 # Import python packages
+import subprocess, sys
+# Ensure Snowflake packages are installed in the *runtime* environment
+subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "snowflake-snowpark-python", "snowflake-connector-python"])
 import streamlit as st
-import subprocess
-subprocess.run(["pip", "install", "snowflake-snowpark-python", "snowflake-connector-python"])
 from snowflake.snowpark.functions import col
 
 # Write directly to the app
