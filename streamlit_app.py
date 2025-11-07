@@ -1,5 +1,8 @@
 # Import python packages
 import streamlit as st
+import subprocess, streamlit as st
+st.write("✅ Python version:", subprocess.getoutput("python --version"))
+st.write("✅ Installed packages:", subprocess.getoutput("pip freeze | grep snowflake"))
 from snowflake.snowpark.functions import col
 
 # Write directly to the app
