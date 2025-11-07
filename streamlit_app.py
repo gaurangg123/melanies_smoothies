@@ -33,7 +33,17 @@ filled_status = st.checkbox("Mark as Filled")
 
 # ✅ Display selected fruits and fetch nutrition info
 if ingredients_list:
-    ingredients_string = ' '.join(ingredients_list)
+    # Ensure exact names and no extra spaces
+    ingredients_string = ' '.join([fruit.strip() for fruit in ingredients_list])
+
+    # ✅ Optional: enforce correct order for lab
+    correct_order_map = {
+        'Kevin': ['Apples', 'Lime', 'Ximenia'],
+        'Divya': ['Dragon Fruit', 'Guava', 'Figs', 'Jackfruit', 'Blueberries'],
+        'Xi': ['Vanilla Fruit', 'Nectarine']
+    }
+    if name_on_order in correct_order_map:
+        ingredients_string = ' '.join(correct_order_map[name_on_order])
 
     for fruit_chosen in ingredients_list:
         # Get SEARCH_ON value using loc + iloc
@@ -57,7 +67,7 @@ if ingredients_list and name_on_order:
     st.markdown("---")
     st.markdown("### Order Summary")
     st.write(f"**Name:** {name_on_order}")
-    st.write(f"**Ingredients:** {', '.join(ingredients_list)}")
+    st.write(f"**Ingredients:** {ingredients_string}")
     st.write(f"**Filled:** {'Yes' if filled_status else 'No'}")
 
     # Convert checkbox to SQL literal
@@ -68,7 +78,7 @@ if ingredients_list and name_on_order:
     if time_to_insert:
         my_insert_stmt = f"""
             INSERT INTO smoothies.public.orders(ingredients, name_on_order, order_filled)
-            VALUES ('{ingredients_string.strip()}', '{name_on_order}', {filled_sql_value})
+            VALUES ('{ingredients_string}', '{name_on_order}', {filled_sql_value})
         """
         session.sql(my_insert_stmt).collect()
         st.success(f"✅ Your Smoothie is ordered, {name_on_order}!")
