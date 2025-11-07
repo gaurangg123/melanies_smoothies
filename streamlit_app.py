@@ -15,13 +15,13 @@ st.write('The name on your Smoothie will be', name_on_order)
 cnx = st.connection("snowflake")
 session = cnx.session()
 
-# ✅ Step 1: Get FRUIT_NAME and SEARCH_ON columns
+# ✅ Get FRUIT_NAME and SEARCH_ON columns
 my_dataframe = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'), col('SEARCH_ON'))
 
-# ✅ Step 2: Convert to Pandas
+# ✅ Convert to Pandas
 pd_df = my_dataframe.to_pandas()
 
-# ✅ Step 3: Multiselect for ingredients
+# ✅ Multiselect for ingredients
 ingredients_list = st.multiselect(
     'Choose up to 5 ingredients:',
     pd_df['FRUIT_NAME'].tolist(),
@@ -44,9 +44,9 @@ if ingredients_list:
 
         # Fetch nutrition info
         try:
-            response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{search_on}")
-            if response.status_code == 200:
-                st.dataframe(response.json(), use_container_width=True)
+            smoothiefroot_response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{search_on}")
+            if smoothiefroot_response.status_code == 200:
+                st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
             else:
                 st.warning("Not found")
         except Exception:
