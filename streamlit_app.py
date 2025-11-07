@@ -15,10 +15,10 @@ st.write('The name on your Smoothie will be', name_on_order)
 cnx = st.connection("snowflake")
 session = cnx.session()
 
-# ✅ Get FRUIT_NAME and SEARCH_ON columns
+# ✅ Get FRUIT_NAME and SEARCH_ON columns from Snowflake
 my_dataframe = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'), col('SEARCH_ON'))
 
-# ✅ Convert to Pandas
+# ✅ Convert to Pandas for multiselect
 pd_df = my_dataframe.to_pandas()
 
 # ✅ Multiselect for ingredients
@@ -31,7 +31,7 @@ ingredients_list = st.multiselect(
 # Checkbox for FILLED status
 filled_status = st.checkbox("Mark as Filled")
 
-# ✅ Display selected fruits and fetch info
+# ✅ Display selected fruits and fetch nutrition info
 if ingredients_list:
     ingredients_string = ' '.join(ingredients_list)
 
@@ -42,7 +42,7 @@ if ingredients_list:
         # Show nutrition info header
         st.subheader(f"{fruit_chosen} Nutrition Information")
 
-        # Fetch nutrition info
+        # Fetch nutrition info from API
         try:
             smoothiefroot_response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{search_on}")
             if smoothiefroot_response.status_code == 200:
@@ -63,10 +63,11 @@ if ingredients_list and name_on_order:
     # Convert checkbox to SQL literal
     filled_sql_value = 'TRUE' if filled_status else 'FALSE'
 
+    # Insert into Snowflake
     time_to_insert = st.button('Submit Order')
     if time_to_insert:
         my_insert_stmt = f"""
-            INSERT INTO smoothies.public.orders(ingredients, name_on_order, filled)
+            INSERT INTO smoothies.public.orders(ingredients, name_on_order, order_filled)
             VALUES ('{ingredients_string.strip()}', '{name_on_order}', {filled_sql_value})
         """
         session.sql(my_insert_stmt).collect()
