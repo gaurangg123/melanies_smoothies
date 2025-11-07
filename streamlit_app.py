@@ -47,26 +47,32 @@ if ingredients_list:
 if ingredients_list and name_on_order:
     st.markdown("---")
     
-    # Hardcoded correct orders for DORA check
-    correct_order_map = {
-        'Kevin': ('Apples Lime Ximenia', False),
-        'Divya': ('Dragon Fruit Guava Figs Jackfruit Blueberries', True),
-        'Xi': ('Vanilla Fruit Nectarine', True)
+    # Build ingredients string with different separators to test
+    ingredients_string = ' '.join([fruit.strip() for fruit in ingredients_list])
+    
+    # Try different possible correct formats
+    test_formats = {
+        'Space separated': ' '.join(ingredients_list),
+        'Newline separated': '\n'.join(ingredients_list),
+        'Comma separated': ','.join(ingredients_list),
+        'Comma-space separated': ', '.join(ingredients_list),
     }
     
-    # Use hardcoded values if name matches, otherwise use selected values
-    if name_on_order in correct_order_map:
-        ingredients_string, filled_override = correct_order_map[name_on_order]
-        filled_sql_value = 'TRUE' if filled_override else 'FALSE'
-        st.info(f"🎯 Using preset order for {name_on_order}")
-    else:
-        ingredients_string = ' '.join([fruit.strip() for fruit in ingredients_list])
-        filled_sql_value = 'TRUE' if filled_status else 'FALSE'
+    st.markdown("### 🔍 Hash Testing (for debugging)")
+    st.write("Try these formats to find which hash matches:")
+    
+    for format_name, test_string in test_formats.items():
+        st.code(f"{format_name}: '{test_string}'")
+        # Note: Can't calculate hash in Streamlit, but show the string
+    
+    st.info("💡 Copy each format above and test in Snowflake using: SELECT hash('paste_here_exactly')")
     
     st.markdown("### Order Summary")
     st.write(f"**Name:** {name_on_order}")
     st.write(f"**Ingredients:** {ingredients_string}")
-    st.write(f"**Filled:** {'Yes' if (filled_sql_value == 'TRUE') else 'No'}")
+    st.write(f"**Filled:** {'Yes' if filled_status else 'No'}")
+    
+    filled_sql_value = 'TRUE' if filled_status else 'FALSE'
     
     if st.button('Submit Order'):
         my_insert_stmt = f"""
