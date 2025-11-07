@@ -15,42 +15,42 @@ st.write('The name on your Smoothie will be', name_on_order)
 cnx = st.connection("snowflake")
 session = cnx.session()
 
-# ✅ Step 1: Add SEARCH_ON column and inspect
+# ✅ Step 1: Get FRUIT_NAME and SEARCH_ON columns
 my_dataframe = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'), col('SEARCH_ON'))
-st.dataframe(my_dataframe, use_container_width=True)  # Debug view
-st.stop()  # Pause here to inspect before moving forward
 
-# ✅ Step 2: Convert Snowflake DataFrame to Pandas
+# ✅ Step 2: Convert to Pandas
 pd_df = my_dataframe.to_pandas()
-st.dataframe(pd_df)  # Debug view
-st.stop()  # Pause here to inspect pandas DataFrame
 
-# ✅ Step 3: Multiselect using FRUIT_NAME
+# ✅ Step 3: Multiselect for ingredients
 ingredients_list = st.multiselect(
     'Choose up to 5 ingredients:',
     pd_df['FRUIT_NAME'].tolist(),
     max_selections=5
 )
 
-# Show selected ingredients
+# ✅ Display selected fruits and fetch info
 if ingredients_list:
     ingredients_string = ' '.join(ingredients_list)
 
     for fruit_chosen in ingredients_list:
         # Get SEARCH_ON value using loc + iloc
         search_on = pd_df.loc[pd_df['FRUIT_NAME'] == fruit_chosen, 'SEARCH_ON'].iloc[0]
-        st.write('The search value for ', fruit_chosen, ' is ', search_on, '.')
+
+        # Show sentence like screenshot
+        st.write(f"The search value for {fruit_chosen} is {search_on}.")
+
+        # Show nutrition info header
+        st.subheader(f"{fruit_chosen} Nutrition Information")
 
         # Fetch nutrition info
         try:
             response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{search_on}")
             if response.status_code == 200:
-                st.subheader(fruit_chosen + ' Nutrition Information')
                 st.dataframe(response.json(), use_container_width=True)
             else:
-                st.warning(f"Nutrition data not available for {fruit_chosen}")
-        except Exception as e:
-            st.warning(f"Could not retrieve nutrition data for {fruit_chosen}: {e}")
+                st.warning("Not found")
+        except Exception:
+            st.warning("Not found")
 
 # ✅ Submit order if name and ingredients are provided
 if ingredients_list and name_on_order:
