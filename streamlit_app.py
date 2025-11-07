@@ -17,10 +17,12 @@ session = cnx.session()
 # Fetch fruit options with SEARCH_ON column
 my_dataframe = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'), col('SEARCH_ON'))
 
-# Display only FRUIT_NAME to users, but keep SEARCH_ON for API calls
+# Convert to Pandas for the multiselect
+pd_df = my_dataframe.to_pandas()
+
 ingredients_list = st.multiselect(
     'Choose up to 5 ingredients:', 
-    my_dataframe['FRUIT_NAME'].to_pandas(), 
+    pd_df['FRUIT_NAME'].tolist(),
     max_selections=5
 )
 
@@ -30,11 +32,11 @@ if ingredients_list:
     for fruit_chosen in ingredients_list:
         ingredients_string += fruit_chosen + ' '
         
-        # Get the search term for this fruit
-        search_value = my_dataframe.filter(col('FRUIT_NAME') == fruit_chosen).select(col('SEARCH_ON')).collect()
+        # Get the search term for this fruit from the pandas dataframe
+        search_row = pd_df[pd_df['FRUIT_NAME'] == fruit_chosen]
         
-        if search_value:
-            search_term = search_value[0]['SEARCH_ON']
+        if not search_row.empty:
+            search_term = search_row.iloc[0]['SEARCH_ON']
             
             # Get nutrition data using the search term
             try:
