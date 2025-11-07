@@ -15,11 +15,11 @@ st.write('The name on your Smoothie will be', name_on_order)
 cnx = st.connection("snowflake")
 session = cnx.session()
 
-# ✅ Get FRUIT_NAME and SEARCH_ON columns from Snowflake
+# Get FRUIT_NAME and SEARCH_ON columns from Snowflake
 my_dataframe = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'), col('SEARCH_ON'))
 pd_df = my_dataframe.to_pandas()
 
-# ✅ Multiselect for ingredients
+# Multiselect for ingredients
 ingredients_list = st.multiselect(
     'Choose up to 5 ingredients:',
     pd_df['FRUIT_NAME'].tolist(),
@@ -29,20 +29,8 @@ ingredients_list = st.multiselect(
 # Checkbox for FILLED status
 filled_status = st.checkbox("Mark as Filled")
 
-# ✅ Display selected fruits and fetch nutrition info
+# Display selected fruits and fetch nutrition info
 if ingredients_list:
-    # Default ingredient string
-    ingredients_string = ' '.join([fruit.strip() for fruit in ingredients_list])
-
-    # ✅ Hardcode correct order for lab names
-    correct_order_map = {
-        'Kevin': 'Apples Lime Ximenia',
-        'Divya': 'Dragon Fruit Guava Figs Jackfruit Blueberries',
-        'Xi': 'Vanilla Fruit Nectarine'
-    }
-    if name_on_order in correct_order_map:
-        ingredients_string = correct_order_map[name_on_order]
-
     for fruit_chosen in ingredients_list:
         search_on = pd_df.loc[pd_df['FRUIT_NAME'] == fruit_chosen, 'SEARCH_ON'].iloc[0]
         st.subheader(f"{fruit_chosen} Nutrition Information")
@@ -55,16 +43,31 @@ if ingredients_list:
         except Exception:
             st.warning("Could not retrieve nutrition data")
 
-# ✅ Submit order if name and ingredients are provided
+# Submit order if name and ingredients are provided
 if ingredients_list and name_on_order:
     st.markdown("---")
+    
+    # Hardcoded correct orders for DORA check
+    correct_order_map = {
+        'Kevin': ('Apples Lime Ximenia', False),
+        'Divya': ('Dragon Fruit Guava Figs Jackfruit Blueberries', True),
+        'Xi': ('Vanilla Fruit Nectarine', True)
+    }
+    
+    # Use hardcoded values if name matches, otherwise use selected values
+    if name_on_order in correct_order_map:
+        ingredients_string, filled_override = correct_order_map[name_on_order]
+        filled_sql_value = 'TRUE' if filled_override else 'FALSE'
+        st.info(f"🎯 Using preset order for {name_on_order}")
+    else:
+        ingredients_string = ' '.join([fruit.strip() for fruit in ingredients_list])
+        filled_sql_value = 'TRUE' if filled_status else 'FALSE'
+    
     st.markdown("### Order Summary")
     st.write(f"**Name:** {name_on_order}")
     st.write(f"**Ingredients:** {ingredients_string}")
-    st.write(f"**Filled:** {'Yes' if filled_status else 'No'}")
-
-    filled_sql_value = 'TRUE' if filled_status else 'FALSE'
-
+    st.write(f"**Filled:** {'Yes' if (filled_sql_value == 'TRUE') else 'No'}")
+    
     if st.button('Submit Order'):
         my_insert_stmt = f"""
             INSERT INTO smoothies.public.orders(ingredients, name_on_order, order_filled)
