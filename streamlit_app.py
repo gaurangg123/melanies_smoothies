@@ -14,9 +14,15 @@ st.write('The name on your Smoothie will be', name_on_order)
 cnx = st.connection("snowflake")
 session = cnx.session()
 
-# Fetch fruit options
-my_dataframe = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'))
-ingredients_list = st.multiselect('Choose up to 5 ingredients:', my_dataframe, max_selections=5)
+# Fetch fruit options with SEARCH_ON column
+my_dataframe = session.table("smoothies.public.fruit_options").select(col('FRUIT_NAME'), col('SEARCH_ON'))
+
+# Display only FRUIT_NAME to users, but keep SEARCH_ON for API calls
+ingredients_list = st.multiselect(
+    'Choose up to 5 ingredients:', 
+    my_dataframe['FRUIT_NAME'].to_pandas(), 
+    max_selections=5
+)
 
 if ingredients_list:
     ingredients_string = ''
@@ -24,12 +30,26 @@ if ingredients_list:
     for fruit_chosen in ingredients_list:
         ingredients_string += fruit_chosen + ' '
         
-        st.subheader(fruit_chosen + 'Nutrition Information')
-        smoothiefroot_response = requests.get("https://my.smoothiefroot.com/api/fruit/" + fruit_chosen)
-        sf_df = st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
+        # Get the search term for this fruit
+        search_value = my_dataframe.filter(col('FRUIT_NAME') == fruit_chosen).select(col('SEARCH_ON')).collect()
+        
+        if search_value:
+            search_term = search_value[0]['SEARCH_ON']
+            
+            # Get nutrition data using the search term
+            try:
+                smoothiefroot_response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{search_term}")
+                
+                if smoothiefroot_response.status_code == 200:
+                    st.subheader(fruit_chosen + ' Nutrition Information')
+                    st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
+                else:
+                    st.warning(f"Nutrition data not available for {fruit_chosen}")
+            except:
+                st.warning(f"Could not retrieve nutrition data for {fruit_chosen}")
 
 if ingredients_list and name_on_order:
-    # Prepare SQL insert statement with both columns
+    # Prepare SQL insert statement
     my_insert_stmt = f"""
         INSERT INTO smoothies.public.orders(ingredients, name_on_order)
         VALUES ('{ingredients_string.strip()}', '{name_on_order}')
