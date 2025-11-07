@@ -28,6 +28,9 @@ ingredients_list = st.multiselect(
     max_selections=5
 )
 
+# Checkbox for FILLED status
+filled_status = st.checkbox("Mark as Filled")
+
 # ✅ Display selected fruits and fetch info
 if ingredients_list:
     ingredients_string = ' '.join(ingredients_list)
@@ -45,7 +48,6 @@ if ingredients_list:
             if smoothiefroot_response.status_code == 200:
                 st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
             else:
-                # Show placeholder table if API fails
                 st.warning("Nutrition data not found")
         except Exception:
             st.warning("Could not retrieve nutrition data")
@@ -56,12 +58,16 @@ if ingredients_list and name_on_order:
     st.markdown("### Order Summary")
     st.write(f"**Name:** {name_on_order}")
     st.write(f"**Ingredients:** {', '.join(ingredients_list)}")
+    st.write(f"**Filled:** {'Yes' if filled_status else 'No'}")
+
+    # Convert checkbox to SQL literal
+    filled_sql_value = 'TRUE' if filled_status else 'FALSE'
 
     time_to_insert = st.button('Submit Order')
     if time_to_insert:
         my_insert_stmt = f"""
-            INSERT INTO smoothies.public.orders(ingredients, name_on_order)
-            VALUES ('{ingredients_string.strip()}', '{name_on_order}')
+            INSERT INTO smoothies.public.orders(ingredients, name_on_order, filled)
+            VALUES ('{ingredients_string.strip()}', '{name_on_order}', {filled_sql_value})
         """
         session.sql(my_insert_stmt).collect()
         st.success(f"✅ Your Smoothie is ordered, {name_on_order}!")
