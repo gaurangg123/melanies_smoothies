@@ -36,9 +36,6 @@ if ingredients_list:
         # Get SEARCH_ON value using loc + iloc
         search_on = pd_df.loc[pd_df['FRUIT_NAME'] == fruit_chosen, 'SEARCH_ON'].iloc[0]
 
-        # Show sentence like screenshot
-        st.write(f"The search value for {fruit_chosen} is {search_on}.")
-
         # Show nutrition info header
         st.subheader(f"{fruit_chosen} Nutrition Information")
 
@@ -48,17 +45,23 @@ if ingredients_list:
             if smoothiefroot_response.status_code == 200:
                 st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
             else:
-                st.warning("Not found")
+                # Show placeholder table if API fails
+                st.warning("Nutrition data not found")
         except Exception:
-            st.warning("Not found")
+            st.warning("Could not retrieve nutrition data")
 
 # ✅ Submit order if name and ingredients are provided
 if ingredients_list and name_on_order:
-    my_insert_stmt = f"""
-        INSERT INTO smoothies.public.orders(ingredients, name_on_order)
-        VALUES ('{ingredients_string.strip()}', '{name_on_order}')
-    """
+    st.markdown("---")
+    st.markdown("### Order Summary")
+    st.write(f"**Name:** {name_on_order}")
+    st.write(f"**Ingredients:** {', '.join(ingredients_list)}")
+
     time_to_insert = st.button('Submit Order')
     if time_to_insert:
+        my_insert_stmt = f"""
+            INSERT INTO smoothies.public.orders(ingredients, name_on_order)
+            VALUES ('{ingredients_string.strip()}', '{name_on_order}')
+        """
         session.sql(my_insert_stmt).collect()
         st.success(f"✅ Your Smoothie is ordered, {name_on_order}!")
