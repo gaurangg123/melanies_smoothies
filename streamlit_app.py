@@ -1,7 +1,11 @@
-# Import python packages
-import subprocess, sys
-# Ensure Snowflake packages are installed in the *runtime* environment
-subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "snowflake-snowpark-python", "snowflake-connector-python"])
+import os, sys, subprocess
+
+packages = ["snowflake-snowpark-python", "snowflake-connector-python"]
+for pkg in packages:
+    try:
+        __import__(pkg.split("-")[0])
+    except ImportError:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", pkg])
 import streamlit as st
 from snowflake.snowpark.functions import col
 
